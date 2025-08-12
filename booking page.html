@@ -802,8 +802,11 @@
           // Create the message content
           const message = `ID: ${id}\nSession: ${session}\nPrice: ${price}\nPerson: ${person}\nDate: ${data.date}\nHours: ${hour}\nBookingfrom: ${data.session_from_time}\nBookingto: ${data.session_to_time}`;
           const encodedMessage = encodeURIComponent(message); // Encode message for URL compatibility
-          console.log(message,"test new case id");
-          errorMsgElement.innerText = "Booking confirmed!";
+          
+          const errorMsgElement = modalElement.querySelector('.bookingErrorMsg');
+          if (errorMsgElement) {
+            errorMsgElement.innerText = "Booking confirmed!";
+          }
           
           window.open(`https://wa.me/${phoneNumber}?text=${encodedMessage}`, '_blank');
       } else {
