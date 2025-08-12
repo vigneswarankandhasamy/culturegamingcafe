@@ -378,11 +378,15 @@
                   <div style="display: flex; gap: 15px;">
                     <label>
                       From:
-                      <input type="time" id="timeFromInputtest" class="form-control" required onchange="calculateHoursAndPrice();">
+                      <select id="timeFromInputtest" class="form-control" required onchange="calculateHoursAndPrice();">
+                        <option value="">Select Time</option>
+                      </select>
                     </label>
                     <label>
                       To:
-                      <input type="time" id="timeToInputtest" class="form-control" required onchange="calculateHoursAndPrice();">
+                      <select id="timeToInputtest" class="form-control" required onchange="calculateHoursAndPrice();">
+                        <option value="">Select Time</option>
+                      </select>
                     </label>
                   </div>
                  
@@ -596,6 +600,35 @@
         }
     }
 
+    function generateTimeOptions() {
+        const timeFromSelect = document.getElementById('timeFromInputtest');
+        const timeToSelect = document.getElementById('timeToInputtest');
+        
+        // Clear existing options except the first one
+        timeFromSelect.innerHTML = '<option value="">Select Time</option>';
+        timeToSelect.innerHTML = '<option value="">Select Time</option>';
+        
+        // Generate 30-minute intervals for 24 hours
+        for (let hour = 0; hour < 24; hour++) {
+            for (let minute = 0; minute < 60; minute += 30) {
+                const timeString = `${hour.toString().padStart(2, '0')}:${minute.toString().padStart(2, '0')}`;
+                const displayTime = `${hour.toString().padStart(2, '0')}:${minute.toString().padStart(2, '0')}`;
+                
+                // Add to From time dropdown
+                const fromOption = document.createElement('option');
+                fromOption.value = timeString;
+                fromOption.textContent = displayTime;
+                timeFromSelect.appendChild(fromOption);
+                
+                // Add to To time dropdown
+                const toOption = document.createElement('option');
+                toOption.value = timeString;
+                toOption.textContent = displayTime;
+                timeToSelect.appendChild(toOption);
+            }
+        }
+    }
+
     function calculateHoursAndPrice() {
         const fromTime = document.getElementById('timeFromInputtest').value;
         const toTime = document.getElementById('timeToInputtest').value;
@@ -605,13 +638,21 @@
             const [fromHour, fromMin] = fromTime.split(':').map(Number);
             const [toHour, toMin] = toTime.split(':').map(Number);
 
-            const fromDate = new Date();
-            fromDate.setHours(fromHour, fromMin);
-
-            const toDate = new Date();
-            toDate.setHours(toHour, toMin);
-
-            const diffHours = (toDate - fromDate) / (1000 * 60 * 60); // Difference in hours
+            // Convert both times to total minutes since midnight
+            const fromMinutes = fromHour * 60 + fromMin;
+            const toMinutes = toHour * 60 + toMin;
+            
+            let diffHours;
+            
+            // Handle time ranges that cross midnight
+            if (toMinutes <= fromMinutes) {
+                // Time range crosses midnight (e.g., 23:30 to 00:30)
+                // Add 24 hours (1440 minutes) to the end time
+                diffHours = ((toMinutes + 1440) - fromMinutes) / 60;
+            } else {
+                // Normal time range within the same day
+                diffHours = (toMinutes - fromMinutes) / 60;
+            }
 
             if (diffHours < 1 || diffHours > 10) {
                 alert("Time range must be at least 1 hour and not exceed 10 hours.");
@@ -681,19 +722,17 @@
         const [hourMinute, period] = time.split(' ');
         let [hour, minute] = hourMinute.split(':').map(Number);
 
-        if (period === "PM" && hour < 12) hour += 12; // Convert PM
-        if (period === "AM" && hour === 12) hour = 0; // Convert 12 AM to 0
+        if (period === "PM" && hour < 12) hour += 12;
+        if (period === "AM" && hour === 12) hour = 0; 
 
-        return hour * 60 + minute; // Convert to total minutes for easy comparison
+        return hour * 60 + minute; 
     };
 
-    // Get total minutes for the booking times
     const bookingFromTime = convertTo24Hour(fromTime);
     const bookingToTime = convertTo24Hour(toTime);
     const existingFromTime = convertTo24Hour(existingBookings[0].timeFrom);
     const existingToTime = convertTo24Hour(existingBookings[0].timeTo);
 
-    // Validate date and time against existing bookings
     const conflictingBooking = existingBookings.find(booking => {
         return booking.date === selectedDate &&
             ((existingFromTime <= bookingToTime && existingToTime >= bookingFromTime));
@@ -764,6 +803,7 @@
           const message = `ID: ${id}\nSession: ${session}\nPrice: ${price}\nPerson: ${person}\nDate: ${data.date}\nHours: ${hour}\nBookingfrom: ${data.session_from_time}\nBookingto: ${data.session_to_time}`;
           const encodedMessage = encodeURIComponent(message); // Encode message for URL compatibility
           console.log(message,"test new case id");
+          errorMsgElement.innerText = "Booking confirmed!";
           
           window.open(`https://wa.me/${phoneNumber}?text=${encodedMessage}`, '_blank');
       } else {
@@ -994,6 +1034,13 @@
 
  <!-- Main JS File -->
  <script src="assets/js/main.js"></script>
+ 
+ <script>
+    // Initialize time dropdowns when page loads
+    document.addEventListener('DOMContentLoaded', function() {
+        generateTimeOptions();
+    });
+ </script>
   
 </body>
 
